@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Trading AI</title>
+  <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+  <style>
+    body { background:#0f172a; color:white; text-align:center; font-family:sans-serif; }
+    input, button { padding:10px; margin:10px; border-radius:8px; }
+    .buy { color:#22c55e; }
+    .sell { color:#ef4444; }
+    .hold { color:#facc15; }
+  </style>
+</head>
+<body>
+
+<h1>📈 Trading AI</h1>
+
+<input id="symbol" placeholder="AAPL / TSLA / NVDA" />
+<button onclick="run()">Analyze</button>
+
+<div id="output"></div>
+<canvas id="chart"></canvas>
+
+<script>
+let chart;
+
+async function run(){
+  const sym = document.getElementById("symbol").value;
+  const res = await fetch("/api/analyze/" + sym);
+  const data = await res.json();
+
+  if(data.error){
+    output.innerHTML = "Error loading data";
+    return;
+  }
+
+  const cls = data.action.toLowerCase();
+
+  output.innerHTML =
+    "<h2 class='"+cls+"'>"+data.action+"</h2>" +
+    "<p>Confidence: "+data.confidence+"/10</p>" +
+    "<p>RSI: "+data.rsi+"</p>" +
+    "<p>"+data.reasons.join(", ")+"</p>" +
+    "<hr>" +
+    "<p>Entry: $"+data.entry+"</p>" +
+    "<p>Target: $"+data.target+"</p>" +
+    "<p>Stop Loss: $"+data.stop+"</p>";
+
+  drawChart(data.prices.reverse());
+}
+
+function drawChart(prices){
+  const ctx = document.getElementById("chart");
+
+  if(chart) chart.destroy();
+
+  chart = new Chart(ctx, {
+    type: "line",
+    data: {
+      labels: prices.map((_,i)=>i),
+      datasets: [{
+        label: "Price",
+        data: prices
+      }]
+    }
+  });
+}
+</script>
+
+</body>
+</html>
